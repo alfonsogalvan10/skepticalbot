@@ -81,7 +81,25 @@ async def health():
 async def teams_webhook(request: Request):
     """Receive a startup name, analyze it, and send result to Teams via Power Automate."""
     data = await request.json()
-    startup_name = data.get("startup_name", "Unknown Startup")
+
+    # Debug: log full payload
+    print(f"📦 Full payload: {data}")
+
+    # Try multiple possible field names from Power Automate
+    startup_name = (
+        data.get("startup_name")
+        or data.get("messageText")
+        or data.get("text")
+        or data.get("message")
+        or str(data)
+    )
+
+    # Strip /analyze prefix if present
+    if "/analyze" in startup_name:
+        startup_name = startup_name.split("/analyze", 1)[-1].strip()
+
+    if not startup_name:
+        startup_name = "Unknown Startup"
 
     print(f"📩 Received request to analyze: {startup_name}")
 
