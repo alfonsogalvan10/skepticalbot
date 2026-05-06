@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: skepticbot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: POWER_AUTOMATE_URL
+        sync: false
