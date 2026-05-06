@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 from fastapi import FastAPI, Request
 
@@ -80,19 +81,27 @@ async def health():
 @app.post("/webhook")
 async def teams_webhook(request: Request):
     """Receive a startup name, analyze it, and send result to Teams via Power Automate."""
-    data = await request.json()
+    raw_body = await request.body()
+    print(f"📦 Raw body: {raw_body}")
 
-    # Debug: log full payload
-    print(f"📦 Full payload: {data}")
+    try:
+        data = json.loads(raw_body)
+    except json.JSONDecodeError:
+        # Power Automate might send plain text or malformed JSON
+        data = {"startup_name": raw_body.decode("utf-8", errors="replace").strip()}
 
-    # Try multiple possible field names from Power Automate
-    startup_name = (
-        data.get("startup_name")
-        or data.get("messageText")
-        or data.get("text")
-        or data.get("message")
-        or str(data)
-    )
+    print(f"📦 Parsed data: {data}")
+
+    if isinstance(data, str):
+        startup_name = data
+    else:
+        startup_name = (
+            data.get("startup_name")
+            or data.get("messageText")
+            or data.get("text")
+            or data.get("message")
+            or str(data)
+        )
 
     # Strip /analyze prefix if present
     if "/analyze" in startup_name:
